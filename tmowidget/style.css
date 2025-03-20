@@ -15,7 +15,6 @@ html {
 	color: white;
 	text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
 	overflow-wrap: break-word;
-	background: linear-gradient(to right, white, transparent 90%);
 }
 
 #statusContainer {
@@ -23,6 +22,7 @@ html {
 	font-size: 30px;
 	text-align: center;
 	background-color: #D12025;
+	background: linear-gradient(to right, white, transparent 90%);
 	color: white;
 	padding: 10px;
 	border-radius: 10px;
