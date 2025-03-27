@@ -3,6 +3,7 @@
 	padding: 0;
 	--margin: 40px;
 	--border-radius: 20px;
+	/* --line-spacing: 1.7em; */
 }
 
 html {
@@ -83,7 +84,7 @@ li {
 #firstMessage {
 	display: none;
 	font-weight: 500;
-	font-size: 0.7rem;
+	font-size: 0.7em;
 }
 
 .firstMessageHighlight {
@@ -102,15 +103,17 @@ li {
 .timestamp,
 .pronouns {
 	background: #adadad46;
-	border-radius: var(--border-radius);
+	/* border-radius: var(--border-radius); */
+	border-radius: 1em;
 	font-size: 0.7em;
-	padding: 5px 15px;
+	/* padding: 5px 15px; */
+	padding: 0.15em 0.5em;
 }
 
 .bits {
 	background: #adadad46;
 	border-radius: calc(var(--border-radius) / 2);
-	font-size: 0.7rem;
+	font-size: 0.7em;
 	padding: 5px 10px;
 }
 
@@ -140,13 +143,13 @@ li {
 	overflow: hidden;
 	white-space: nowrap;
 	text-overflow: ellipsis;
-	font-size: 0.7rem;
+	font-size: 0.7em;
 	opacity: 0.5;
 }
 
 #message {
 	font-weight: 400;
-	line-height: 1.7em;
+	line-height: var(--line-spacing);
 }
 
 #card {
@@ -202,6 +205,22 @@ li {
 
 .streamelements {
 	background: linear-gradient(#263b8abf, #0a112abf) !important;
+}
+
+.patreon {
+	background: linear-gradient(#c76633, #fd5e0a) !important;
+}
+
+.kofi {
+	background: linear-gradient(#54c7ee, #08c2ff) !important;
+}
+
+.tipeeeStream {
+	background: linear-gradient(#120e23, #5d192a) !important;
+}
+
+.fourthwall {
+	background: linear-gradient(#405eb3, #0d3cb9) !important;
 }
 
 /****************/
