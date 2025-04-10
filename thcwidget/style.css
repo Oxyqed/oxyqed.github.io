@@ -5,6 +5,10 @@
 	--border-radius: 20px;
 }
 
+body {
+	overflow: hidden;
+}
+
 html {
 	width: 100vw;
 	height: 100vh;
@@ -57,18 +61,30 @@ html {
 	transform: translateX(50%);
 	overflow: hidden;
 	white-space: nowrap;
-	
+
 	font-weight: 700;
 	line-height: 1.7em;
 	width: 100%;
 	text-align: center;
-	bottom: calc(-1 * var(--margin) - 2em);
+}
+
+#background {
+	position: absolute;
+	bottom: 0;
+	right: 50%;
+	transform: translateX(50%);
+	width: 100%;
+	height: 1.7em;
+	background: var(--background);
+	bottom: calc(-1 * var(--margin));
+	z-index: -100;
 }
 
 @keyframes showAlertBox {
 	0% {
-		bottom: calc(-1 * var(--margin) - 2em);
+		bottom: calc(-1 * var(--margin) - 1.7em);
 	}
+
 	100% {
 		bottom: 0px;
 	}
@@ -78,15 +94,16 @@ html {
 	0% {
 		bottom: 0px;
 	}
+
 	100% {
-		bottom: calc(-1 * var(--margin) - 2em);
+		bottom: calc(-1 * var(--margin) - 1.7em);
 	}
 }
 
 li {
 	list-style: none;
 	overflow: hidden;
-	width: 0px;
+	max-width: 0px;
 	transition: all 1s ease-in-out;
 }
 
@@ -100,7 +117,7 @@ li {
 }
 
 #IPutThisHereSoICanCalculateHowBigEachMessageIsSupposedToBeBeforeIAddItToTheMessageList {
-    /* margin-top: 10px; */
+	/* margin-top: 10px; */
 	background: #2FB774;
 	display: inline;
 	opacity: 0;
@@ -118,24 +135,32 @@ li {
 .timestamp,
 .pronouns {
 	background: #adadad46;
-	border-radius: var(--border-radius);
-	font-size: 0.7rem;
-	padding: 5px 15px;
+	/* border-radius: var(--border-radius); */
+	border-radius: 1em;
+	font-size: 0.7em;
+	/* padding: 5px 15px; */
+	padding: 0.15em 0.5em;
+
 }
 
 .bits {
 	background: #adadad46;
 	border-radius: calc(var(--border-radius) / 2);
-	font-size: 0.7rem;
+	font-size: 0.7em;
 	padding: 5px 10px;
 }
 
 .platform,
-.badge,
-.emote {
+.badge {
 	height: 1em;
 	margin: 1px;
 	transform: translate(0px, 0.25em);
+}
+
+.emote {
+	height: 1.5em;
+	margin: 1px;
+	transform: translate(0px, 0.4em);
 }
 
 #badgeList {
@@ -159,10 +184,10 @@ li {
 
 /* .firstMessage {
 	display: none;
-	font-size: 0.7rem;
+	font-size: 0.7em;
 } */
 
-/* .firstMessageHighlight {
+/* .highlightMessage {
 	background: #adadad46;
 	padding: 20px 40px;
 	border-radius: var(--border-radius);
@@ -173,7 +198,7 @@ li {
 	overflow: hidden;
 	white-space: nowrap;
 	text-overflow: ellipsis;
-	font-size: 0.7rem;
+	font-size: 0.7em;
 	opacity: 0.5;
 } */
 
@@ -227,6 +252,26 @@ li {
 	background: linear-gradient(#263b8abf, #0a112abf) !important;
 }
 
+.patreon {
+	background: linear-gradient(#c76633bf, #fd5e0abf) !important;
+}
+
+.kofi {
+	background: linear-gradient(#54c7eebf, #08c2ffbf) !important;
+}
+
+.tipeeeStream {
+	background: linear-gradient(#120e23bf, #5d192abf) !important;
+}
+
+.fourthwall {
+	background: linear-gradient(#466edbbf, #1c56f5bf) !important;
+}
+
+.blank {
+	background: #adadad00 !important;
+}
+
 /****************/
 /** ANIMATIONS **/
 /****************/
@@ -266,7 +311,6 @@ li {
 }
 
 /*
-
 #message {
 	display: none;
 }
@@ -290,7 +334,6 @@ li {
 #badgeList {
 	display: none;
 }
-*/
 
 #timestamp {
 	display: none;
@@ -299,3 +342,4 @@ li {
 #pronouns {
 	display: none;
 }
+*/
