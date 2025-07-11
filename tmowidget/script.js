@@ -31,6 +31,7 @@ const hideAfter = GetIntParam("hideAfter", 0);
 const excludeCommands = GetBooleanParam("excludeCommands", true);
 const ignoreChatters = urlParams.get("ignoreChatters") || "";
 const scrollDirection = GetIntParam("scrollDirection", 1);
+const groupConsecutiveMessages = GetBooleanParam("groupConsecutiveMessages", false);
 const inlineChat = GetBooleanParam("inlineChat", false);
 const imageEmbedPermissionLevel = GetIntParam("imageEmbedPermissionLevel", 20);
 
@@ -54,6 +55,8 @@ const showTipeeeStreamDonations = GetBooleanParam("showTipeeeStreamDonations", t
 const showFourthwallAlerts = GetBooleanParam("showFourthwallAlerts", true);
 
 const furryMode = GetBooleanParam("furryMode", false);
+
+const animationSpeed = GetIntParam("animationSpeed", 0.1);
 
 // Set fonts for the widget
 document.body.style.fontFamily = font;
@@ -82,6 +85,9 @@ switch (scrollDirection) {
 		document.getElementById('messageList').classList.add('reverseScrollDirection');
 		break;
 }
+
+// Set the animation speed
+document.documentElement.style.setProperty('--animation-speed', `${animationSpeed}s`);
 
 
 
@@ -266,6 +272,11 @@ client.on('Fourthwall.GiftDrawEnded', (response) => {
 	FourthwallGiftDrawEnded(response.data);
 })
 
+client.on('General.Custom', (response) => {
+	console.debug(response.data);
+	GeneralCustom(response.data);
+})
+
 
 
 ///////////////////////
@@ -319,8 +330,7 @@ async function TwitchChatMessage(data) {
 	const isSharedChat = data.isSharedChat;
 	if (isSharedChat) {
 		if (showTwitchSharedChat > 1) {
-			if (!data.sharedChat.primarySource)
-			{
+			if (!data.sharedChat.primarySource) {
 				const sharedChatChannel = data.sharedChat.sourceRoom.name;
 				sharedChatDiv.style.display = 'block';
 				sharedChatChannelDiv.innerHTML = `💬 ${sharedChatChannel}`;
@@ -350,7 +360,10 @@ async function TwitchChatMessage(data) {
 
 	// Set the username info
 	if (showUsername) {
-		usernameDiv.innerText = data.message.displayName;
+		if (data.message.displayName.toLowerCase() == data.message.username.toLowerCase())
+			usernameDiv.innerText = data.message.displayName;
+		else
+			usernameDiv.innerText = `${data.message.displayName} (${data.message.username})`;
 		usernameDiv.style.color = data.message.color;
 	}
 
@@ -380,8 +393,7 @@ async function TwitchChatMessage(data) {
 		messageDiv.style.color = messageColor;
 
 	// Remove the line break
-	if (inlineChat)
-	{
+	if (inlineChat) {
 		instance.querySelector("#colon-separator").style.display = `inline`;
 		instance.querySelector("#line-space").style.display = `none`;
 	}
@@ -406,7 +418,21 @@ async function TwitchChatMessage(data) {
 	// Render emotes
 	for (i in data.emotes) {
 		const emoteElement = `<img src="${data.emotes[i].imageUrl}" class="emote"/>`;
-		messageDiv.innerHTML = messageDiv.innerHTML.replace(new RegExp(`\\b${data.emotes[i].name}\\b`), emoteElement);
+		const emoteName = EscapeRegExp(data.emotes[i].name);
+
+		let regexPattern = emoteName;
+
+		// Check if the emote name consists only of word characters (alphanumeric and underscore)
+		if (/^\w+$/.test(emoteName)) {
+			regexPattern = `\\b${emoteName}\\b`;
+		}
+		else {
+			// For non-word emotes, ensure they are surrounded by non-word characters or boundaries
+			regexPattern = `(?<=^|[^\\w])${emoteName}(?=$|[^\\w])`;
+		}
+
+		const regex = new RegExp(regexPattern, 'g');
+		messageDiv.innerHTML = messageDiv.innerHTML.replace(regex, emoteElement);
 	}
 
 	// Render cheermotes
@@ -432,7 +458,7 @@ async function TwitchChatMessage(data) {
 	// Hide the header if the same username sends a message twice in a row
 	// EXCEPT when the scroll direction is set to reverse (scrollDirection == 2)
 	const messageList = document.getElementById("messageList");
-	if (messageList.children.length > 0 && scrollDirection != 2) {
+	if (groupConsecutiveMessages && messageList.children.length > 0 && scrollDirection != 2) {
 		const lastPlatform = messageList.lastChild.dataset.platform;
 		const lastUserId = messageList.lastChild.dataset.userId;
 		if (lastPlatform == "twitch" && lastUserId == data.user.id)
@@ -554,7 +580,10 @@ async function TwitchAnnouncement(data) {
 		content.querySelector("#timestamp").classList.add("timestamp");
 		content.querySelector("#timestamp").innerText = GetCurrentTimeFormatted();
 	}
-	content.querySelector("#username").innerText = data.user.name;
+	if (data.user.name.toLowerCase() == data.user.login.toLowerCase())
+		content.querySelector("#username").innerText = data.user.name;
+	else
+		content.querySelector("#username").innerText = `${data.user.name} (${data.user.login})`;
 	content.querySelector("#username").style.color = data.user.color;
 	content.querySelector("#message").innerText = data.text;
 
@@ -585,7 +614,21 @@ async function TwitchAnnouncement(data) {
 	for (i in data.parts) {
 		if (data.parts[i].type == `emote`) {
 			const emoteElement = `<img src="${data.parts[i].imageUrl}" class="emote"/>`;
-			content.querySelector("#message").innerHTML = content.querySelector("#message").innerHTML.replace(new RegExp(`\\b${data.parts[i].text}\\b`), emoteElement);
+			const emoteName = EscapeRegExp(data.parts[i].text);
+	
+			let regexPattern = emoteName;
+	
+			// Check if the emote name consists only of word characters (alphanumeric and underscore)
+			if (/^\w+$/.test(emoteName)) {
+				regexPattern = `\\b${emoteName}\\b`;
+			}
+			else {
+				// For non-word emotes, ensure they are surrounded by non-word characters or boundaries
+				regexPattern = `(?<=^|[^\\w])${emoteName}(?=$|[^\\w])`;
+			}
+	
+			const regex = new RegExp(regexPattern, 'g');
+			content.querySelector("#message").innerHTML = content.querySelector("#message").innerHTML.replace(regex, emoteElement);
 		}
 	}
 
@@ -627,7 +670,9 @@ async function TwitchSub(data) {
 	}
 
 	// Set the text
-	const username = data.user.name;
+	let username = data.user.name;
+	if (data.user.name.toLowerCase() != data.user.login.toLowerCase())
+		username = `${data.user.name} (${data.user.login})`;
 	const subTier = data.sub_tier;
 	const isPrime = data.is_prime;
 
@@ -671,7 +716,9 @@ async function TwitchResub(data) {
 	}
 
 	// Set the text
-	const username = data.user.name;
+	let username = data.user.name;
+	if (data.user.name.toLowerCase() != data.user.login.toLowerCase())
+		username = `${data.user.name} (${data.user.login})`;
 	const subTier = data.subTier;
 	const isPrime = data.isPrime;
 	const cumulativeMonths = data.cumulativeMonths;
@@ -718,7 +765,9 @@ async function TwitchGiftSub(data) {
 	}
 
 	// Set the text
-	const username = data.user.name;
+	let username = data.user.name;
+	if (data.user.name.toLowerCase() != data.user.login.toLowerCase())
+		username = `${data.user.name} (${data.user.login})`;
 	const subTier = data.subTier;
 	const recipient = data.recipient.name;
 	const cumlativeTotal = data.cumlativeTotal;
@@ -762,7 +811,9 @@ async function TwitchRewardRedemption(data) {
 	}
 
 	// Set the text
-	const username = data.user_name;
+	let username = data.user_name;
+	if (data.user_name.toLowerCase() != data.user_login.toLowerCase())
+		username = `${data.user_name} (${data.user_login})`;
 	const rewardName = data.reward.title;
 	const cost = data.reward.cost;
 	const userInput = data.user_input;
@@ -807,7 +858,9 @@ async function TwitchRaid(data) {
 
 
 	// Set the text
-	const username = data.from_broadcaster_user_login;
+	let username = data.from_broadcaster_user_name;
+	if (data.from_broadcaster_user_name.toLowerCase() != data.from_broadcaster_user_login.toLowerCase())
+		username = `${data.from_broadcaster_user_name} (${data.from_broadcaster_user_login})`;
 	const viewers = data.viewers;
 
 	titleDiv.innerText = `${username} is raiding`;
@@ -920,8 +973,7 @@ function YouTubeMessage(data) {
 		messageDiv.innerText = TranslateToFurry(data.message);
 
 	// Remove the line break
-	if (inlineChat)
-	{
+	if (inlineChat) {
 		instance.querySelector("#colon-separator").style.display = `inline`;
 		instance.querySelector("#line-space").style.display = `none`;
 	}
@@ -988,7 +1040,7 @@ function YouTubeMessage(data) {
 	// Hide the header if the same username sends a message twice in a row
 	// EXCEPT when the scroll direction is set to reverse (scrollDirection == 2)
 	const messageList = document.getElementById("messageList");
-	if (messageList.children.length > 0 && scrollDirection != 2) {
+	if (groupConsecutiveMessages && messageList.children.length > 0 && scrollDirection != 2) {
 		const lastPlatform = messageList.lastChild.dataset.platform;
 		const lastUserId = messageList.lastChild.dataset.userId;
 		if (lastPlatform == "youtube" && lastUserId == data.user.id)
@@ -1043,7 +1095,8 @@ function YouTubeSuperChat(data) {
 
 	// Set message text
 	titleDiv.innerText = `🪙 ${data.user.name} sent a Super Chat (${data.amount})`;
-	contentDiv.innerText = `${data.message}!`;
+	if (data.message)
+		contentDiv.innerText = `${data.message}!`;
 
 	AddMessageItem(instance, data.eventId);
 }
@@ -1227,9 +1280,9 @@ function PatreonPledgeCreated(data) {
 	cardDiv.classList.add('patreon');
 
 	const user = data.attributes.full_name;
-	const amount = (data.attributes.will_pay_amount_cents/100).toFixed(2);
+	const amount = (data.attributes.will_pay_amount_cents / 100).toFixed(2);
 	const patreonIcon = `<img src="icons/platforms/patreon.png" class="platform"/>`;
-	
+
 	titleDiv.innerHTML = `${patreonIcon} ${user} joined Patreon ($${amount})`;
 
 	AddMessageItem(instance, data.id);
@@ -1812,9 +1865,9 @@ async function GetPronouns(platform, username) {
 		const response = await client.getUserPronouns(platform, username);
 		const userFound = response.pronoun.userFound;
 		const pronouns = userFound ? `${response.pronoun.pronounSubject}/${response.pronoun.pronounObject}` : '';
-		
+
 		pronounMap.set(username, pronouns);
-	
+
 		return pronouns;
 	}
 }
@@ -1977,42 +2030,46 @@ function GetWinnersList(gifts) {
 
 function TranslateToFurry(sentence) {
 	const words = sentence.toLowerCase().split(/\b/);
-  
+
 	const furryWords = words.map(word => {
-	  if (/\w+/.test(word)) {
-		let newWord = word;
-  
-		// Common substitutions
-		newWord = newWord.replace(/l/g, 'w');
-		newWord = newWord.replace(/r/g, 'w');
-		newWord = newWord.replace(/th/g, 'f');
-		newWord = newWord.replace(/you/g, 'yous');
-		newWord = newWord.replace(/my/g, 'mah');
-		newWord = newWord.replace(/me/g, 'meh');
-		newWord = newWord.replace(/am/g, 'am');
-		newWord = newWord.replace(/is/g, 'is');
-		newWord = newWord.replace(/are/g, 'are');
-		newWord = newWord.replace(/very/g, 'vewy');
-		newWord = newWord.replace(/pretty/g, 'pwetty');
-		newWord = newWord.replace(/little/g, 'wittle');
-		newWord = newWord.replace(/nice/g, 'nyce');
-  
-		// Random additions
-		if (Math.random() < 0.15) {
-		  newWord += ' nya~';
-		} else if (Math.random() < 0.1) {
-		  newWord += ' >w<';
-		} else if (Math.random() < 0.05) {
-		  newWord += ' owo';
+		if (/\w+/.test(word)) {
+			let newWord = word;
+
+			// Common substitutions
+			newWord = newWord.replace(/l/g, 'w');
+			newWord = newWord.replace(/r/g, 'w');
+			newWord = newWord.replace(/th/g, 'f');
+			newWord = newWord.replace(/you/g, 'yous');
+			newWord = newWord.replace(/my/g, 'mah');
+			newWord = newWord.replace(/me/g, 'meh');
+			newWord = newWord.replace(/am/g, 'am');
+			newWord = newWord.replace(/is/g, 'is');
+			newWord = newWord.replace(/are/g, 'are');
+			newWord = newWord.replace(/very/g, 'vewy');
+			newWord = newWord.replace(/pretty/g, 'pwetty');
+			newWord = newWord.replace(/little/g, 'wittle');
+			newWord = newWord.replace(/nice/g, 'nyce');
+
+			// Random additions
+			if (Math.random() < 0.15) {
+				newWord += ' nya~';
+			} else if (Math.random() < 0.1) {
+				newWord += ' >w<';
+			} else if (Math.random() < 0.05) {
+				newWord += ' owo';
+			}
+
+			return newWord;
 		}
-  
-		return newWord;
-	  }
-	  return word;
+		return word;
 	});
-  
+
 	return furryWords.join('');
-  }
+}
+
+function EscapeRegExp(string) {
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
 
 
 
@@ -2038,4 +2095,149 @@ function SetConnectionStatus(connected) {
 		statusContainer.style.transition = "";
 		statusContainer.style.opacity = 1;
 	}
+}
+
+
+
+
+
+
+
+function GeneralCustom(data) {
+	const target = data.target;
+	const type = data.type;
+
+	// Check the target for the message
+	const path = window.location.pathname;
+	const firstSegment = path.split('/')[1];
+	if (firstSegment != target)
+	    return;
+
+	switch (type)
+	{
+		case "message":
+			CustomMessage(data);
+			break;
+		case "alert":
+			CustomAlert(data);
+			break;
+	}
+}
+
+function CustomMessage(data) {
+	// Don't post messages starting with "!"
+	if (data.message.startsWith("!") && excludeCommands)
+		return;
+
+	// Don't post messages from users from the ignore list
+	if (ignoreUserList.includes(data.username.toLowerCase()))
+		return;
+
+	// Get a reference to the template
+	const template = document.getElementById('messageTemplate');
+
+	// Create a new instance of the template
+	const instance = template.content.cloneNode(true);
+
+	// Get divs
+	const messageContainerDiv = instance.querySelector("#messageContainer");
+	const firstMessageDiv = instance.querySelector("#firstMessage");
+	const sharedChatDiv = instance.querySelector("#sharedChat");
+	const sharedChatChannelDiv = instance.querySelector("#sharedChatChannel");
+	const replyDiv = instance.querySelector("#reply");
+	const replyUserDiv = instance.querySelector("#replyUser");
+	const replyMsgDiv = instance.querySelector("#replyMsg");
+	const userInfoDiv = instance.querySelector("#userInfo");
+	const avatarDiv = instance.querySelector("#avatar");
+	const timestampDiv = instance.querySelector("#timestamp");
+	const platformDiv = instance.querySelector("#platform");
+	const badgeListDiv = instance.querySelector("#badgeList");
+	const pronounsDiv = instance.querySelector("#pronouns");
+	const usernameDiv = instance.querySelector("#username");
+	const messageDiv = instance.querySelector("#message");
+
+	// Set timestamp
+	if (showTimestamps) {
+		timestampDiv.classList.add("timestamp");
+		timestampDiv.innerText = GetCurrentTimeFormatted();
+	}
+
+	// Set the username info
+	if (showUsername) {
+		if (data.displayName.toLowerCase() == data.username.toLowerCase())
+			usernameDiv.innerText = data.displayName;
+		else
+			usernameDiv.innerText = `${data.displayName} (${data.username})`;
+		usernameDiv.style.color = data.userColor;
+	}
+
+	// Set the message data
+	let message = data.message;
+
+	// Set furry mode
+	if (furryMode)
+		message = TranslateToFurry(message);
+
+	// Set message text
+	if (showMessage) {
+		messageDiv.innerText = message;
+	}
+
+	// Remove the line break
+	if (inlineChat) {
+		instance.querySelector("#colon-separator").style.display = `inline`;
+		instance.querySelector("#line-space").style.display = `none`;
+	}
+
+	// Render platform
+	if (showPlatform) {
+		const platformElements = `<img src="${data.platform.icon}" class="platform"/>`;
+		platformDiv.innerHTML = platformElements;
+	}
+
+	// Render avatars
+	if (showAvatar) {
+		const avatar = new Image();
+		avatar.src = data.avatar;
+		avatar.classList.add("avatar");
+		avatarDiv.appendChild(avatar);
+	}
+
+	AddMessageItem(instance, data.msgId, data.platform.name, data.username);
+}
+
+function CustomAlert(data) {
+	// Get a reference to the template
+	const template = document.getElementById('cardTemplate');
+
+	// Create a new instance of the template
+	const instance = template.content.cloneNode(true);
+
+	// Get divs
+	const cardDiv = instance.querySelector("#card");
+	const headerDiv = instance.querySelector("#header");
+	const avatarDiv = instance.querySelector("#avatar");
+	const iconDiv = instance.querySelector("#icon");
+	const titleDiv = instance.querySelector("#title");
+	const contentDiv = instance.querySelector("#content");
+
+	// Set the card background colors
+	cardDiv.style.background = data.background;
+
+	// Set the card header
+	const icon = new Image();
+	icon.src = data.icon;
+	icon.classList.add("badge");
+	iconDiv.appendChild(icon);
+
+	// // Set the text
+	// let username = data.displayName;
+	// if (data.displayName.toLowerCase() != data.username.toLowerCase())
+	// 	username = `${data.displayName} (${data.username})`;
+
+	titleDiv.innerText = data.title;
+	contentDiv.innerText = data.content;
+
+	AddMessageItem(instance, data.messageId);
+
 }
