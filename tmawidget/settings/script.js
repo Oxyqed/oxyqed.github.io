@@ -1,6 +1,6 @@
 const widgetContainer = document.getElementById('widgetContainer');
 
-const settingsPageURL = '../../utilities/settings-page-builder';
+const settingsPageURL = '../../.utilities/settings-page-builder';
 
 const currentURL = window.location.href;
 
