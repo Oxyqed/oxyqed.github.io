@@ -1,29 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="../../.resources/logo.png" type="image/png">
-    <title>nutty</title>
-    <style>
-        body {
-            margin: 0;
-            display: flex;
-            background: #181818;
-        }
+<link rel="stylesheet" href="./style.css" />
+<div id="mainContainer">
+	<label class="metricContainer">
+		<label class="icon">★</label>
+		<label id="subCountLabel"></label>
+	</label>
 
-        #widgetContainer {
-            width: 100vw;
-            height: 100vh;
-            border-width: 0px;
-        }
-    </style>
-</head>
+	<label class="metricContainer">
+		<label class="icon">♥</label>
+		<label class="metricLabel" id="followerCountLabel"></label>
+	</label>
 
-<body>
-    <iframe id="widgetContainer"></iframe>
-    <script src="script.js"></script>
-</body>
+	<label class="metricContainer">
+		<label class="icon">👁</label>
+		<label class="metricLabel" id="viewCountLabel"></label>
+	</label>
+</div>
 
-</html>
+<script src="./script.js"></script>

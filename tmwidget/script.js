@@ -1,23 +1,38 @@
-const widgetContainer = document.getElementById('widgetContainer');
+////////////////////
+// URL PARAMETERS //
+////////////////////
 
-const settingsPageURL = '../../.utilities/settings-page-builder';
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+const twitchUsername = urlParams.get("username") || '';
 
-const currentURL = window.location.href;
+///////////////
+// FUNCTIONS //
+///////////////
 
-let settingsJSON;
-let baseURL = currentURL;
+async function UpdateMetrics() {
+    document.getElementById("subCountLabel").innerHTML = await GetMetric("https://decapi.me/twitch/subcount");
+    document.getElementById("followerCountLabel").innerHTML = await GetMetric("https://decapi.me/twitch/followcount");
+    document.getElementById("viewCountLabel").innerHTML = await GetViewCount();
 
-if (baseURL.endsWith("index.html"))
-    baseURL = baseURL.replace("index.html", "");
+    setTimeout(UpdateMetrics, 15000);
+}
 
-settingsJSON = "?settingsJson=" + baseURL + "settings.json";
+UpdateMetrics();
 
-const lastSlashIndex = baseURL.lastIndexOf("/");
-let widgetURL = "&widgetURL=" + baseURL.replace("/settings", "");
+async function GetMetric(url) {
+    const response = await fetch(`${url}/${twitchUsername}`);
+    const metric = await response.text();
 
-console.debug("Window Ref: " + window.location.href);
-console.debug("Base URL: " + baseURL);
-console.debug("Settings JSON: " + settingsJSON);
-console.debug("Widget URL: " + widgetURL);
+    if (metric.includes("decapi.me"))
+        return "-";
+    else
+        return metric;
+}
 
-widgetContainer.src = settingsPageURL + settingsJSON + widgetURL;
+async function GetViewCount() {    
+    const response = await fetch(`https://decapi.me/twitch/viewercount/${twitchUsername}`);
+    const viewcount = await response.text();
+
+    return isNaN(Number(viewcount)) ? 0 : Number(viewcount);
+}
